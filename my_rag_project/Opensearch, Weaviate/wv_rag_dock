@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+# 1. 시스템 패키지 설치
+RUN apt-get update && apt-get install -y \
+    libpq-dev gcc \
+ && rm -rf /var/lib/apt/lists/*
+
+# 2. 작업 디렉토리
+WORKDIR /app
+
+# 3. requirements 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 4. 소스 복사
+COPY . .
+
+# 5. uvicorn 실행
+CMD ["uvicorn", "wv_server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--loop", "uvloop", "--http", "h11", "--timeout-keep-alive", "75"]
+

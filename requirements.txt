@@ -1,0 +1,63 @@
+# --- FastAPI 서버 ---
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.8.2
+python-dotenv==1.0.1
+aiofiles==23.2.1
+
+# --- DB (PostgreSQL / SQLAlchemy Async) ---
+SQLAlchemy==2.0.34
+asyncpg==0.29.0
+psycopg[binary]==3.2.1
+lark
+
+# --- LangChain & RAG (0.3.x 계열 고정) ---
+langchain==0.3.27
+langchain-openai
+langchain-cohere
+langchain-postgres
+langchain-community
+langsmith
+rank-bm25
+
+# --- 모델 SDK / 토크나이저 ---
+openai
+cohere==5.5.8
+tiktoken==0.7.0
+
+# --- OpenSearch & AWS ---
+opensearch-py==2.6.0
+boto3==1.35.40
+
+# --- Elasticsearch ---
+elasticsearch>=8.13,<9                # ES 클라이언트
+langchain-elasticsearch>=0.2.3     # ES용 VectorStore/하이브리드(RRF)
+
+
+# --- weaviate ---
+langchain-weaviate
+weaviate-client
+kiwipiepy
+
+# --- 데이터 유틸 ---
+pandas==2.2.2
+numpy==1.26.4
+pypdf==4.3.1
+pdfplumber==0.11.4
+openpyxl==3.1.5
+PyMuPDF==1.24.10
+pymupdf4llm>=0.0.17
+llama-parse>=0.5.0       # LlamaParse
+
+
+# --- Google APIs ---
+google-api-python-client==2.184.0
+google-auth==2.35.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
+gspread==6.2.1
+
+# --- 설정/유틸 ---
+pyyaml
+asyncpg
+scikit-learn

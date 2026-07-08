@@ -1,0 +1,24 @@
+# 파이썬 가상 환경 폴더
+data/
+db_paraphrase/
+
+rag_env/
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+.DS_Store
+
+
+# 그 외 일반적인 로그, 데이터, 아카이브 파일
+*.log
+*.db
+*.sqlite3
+/media/
+/static/
+
+.env
+
+
+# gcp apikey
+hygoogle-service-key.json 

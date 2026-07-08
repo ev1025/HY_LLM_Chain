@@ -1,0 +1,139 @@
+# 구글 드라이브 
+google_drive:
+  service_key_path: "hygoogle-service-key.json"       # gcp_api_key 로컬 경로
+  base_folder_id: "1j1d2zwxVSBR9kyx-PG-7zwAkNbl3AlJn" # hy_googledrive HY_AI_데이터폴더 ID
+  scopes:
+    - 'https://www.googleapis.com/auth/drive.readonly'
+  # KGS 구글시트
+  kgs_sheet: "https://docs.google.com/spreadsheets/d/1kh-1S4hS2XcDok79biFeKuCS014D7gerIRj3QebNrFc/edit?usp=sharing"
+
+# 구글드라이브 폴더 계층
+  folder_hierarchy:
+    level1: ['모집요강']
+    level2: ['2026'] 
+    level3: ['수시']  
+
+# 파일명 파싱을 위한 매핑 정보
+  mappings:
+    admission_type:
+      "수시": "early_admission"
+      "정시": "regular_admission"
+
+    document_type:
+      "모집요강": "admissions_guidelines"
+
+# GPT
+openai:
+  models:
+    kgs-summary: gpt-4.1-nano
+    kgs-filter: gpt-4.1-mini
+    kgs-answer: gpt-4o-mini 
+
+  embeddings:
+      models: 
+      - text-embedding-3-large
+      - text-embedding-3-small
+      dim: 
+      - 3072
+      - 1536
+
+# Cohere
+cohere:
+  rerank: 
+  - rerank-v3.5
+  - rerank-multilingual-v3.0
+  embeddings: 
+  - embed-v4.0
+  - embed-multilingual-v3.0
+  - embed-multilingual-light-v3.0
+
+# AWS
+aws:
+  region: "ap-northeast-2"
+  service: "es"
+
+  opensearch:
+    susi_index: "susi_index"
+    kgs_index: "kgs_index"
+
+    morph: False
+    question: True
+
+    kgs_index_k1: 1.0
+    kgs_index_b: 0.75
+    kgs_index_m: 8
+    kgs_ef_construction: 32
+    kgs_ef_search: 32
+
+
+  s3:
+    bucket: "hy-rag"
+    susi_file_path: "susi"   
+    kgs_file_path : "kgs"
+
+weaviate:
+  timeout: 120
+  # Weaviate는 클래스 이름이 대문자로 시작해야 함
+  susi_index: "Susi"
+  kgs_index: "Kgs"
+
+  k: 60
+
+  alpha: 0.8 # bm25는 0.2
+  morph: False
+  question: True
+
+  kgs_index_k1: 1.6
+  kgs_index_b: 0.75
+  kgs_index_m: 8
+  kgs_ef_construction: 32
+  kgs_ef_search: 32
+
+elasticsearch:
+  kgs_index: "kgs_index"
+  susi_index: "susi_index"
+
+  weights: [0.4, 0.6] # bm25 비율
+  morph: False
+  question: True
+  
+  kgs_index_k1: 1.0
+  kgs_index_b: 1.0
+  kgs_index_m: 8
+  kgs_ef_construction: 32
+  
+  
+# Retriever - best_parameter
+retriever:
+  bm25:
+    qtype: "multi_match"
+    k: 30
+    # min_score: 5.0 # threshold(상대값으로 비교해서 사용하기 애매함)
+
+  vector_store:
+    engine: "faiss"
+    space_type: "cosinesimil"
+  
+  vector_search:
+    k: 30
+    search_type: "similarity" 
+    parameters:
+      similarity:
+        num_candidates: 32 
+        score_threshold: 0.7
+      
+      mmr:
+        fetch_k: 150
+        lambda_mult: 0.7
+        
+      similarity_score_threshold:
+        score_threshold: 0.7
+        
+  ensemble:
+    weights: [0.5, 0.5] # [BM25, vector_search]
+
+
+  rerank:
+    model: "rerank-multilingual-v3.0"
+    top_n: 5  # 최대 개수(기본5 + (대학교 수 * 2))
+    threshold: 0.7
