@@ -12,15 +12,15 @@
 ## 목차
 
 - [프로젝트 개요](#프로젝트-개요)
-- [빠른 시작](#빠른-시작)
+- [핵심 성과](#핵심-성과)
 - [워크플로우](#워크플로우)
   - [1. 데이터 적재 파이프라인 (배치)](#1-데이터-적재-파이프라인-배치)
   - [2. 질의응답 파이프라인 (실시간)](#2-질의응답-파이프라인-실시간)
   - [3. 배포 파이프라인 (CI/CD)](#3-배포-파이프라인-cicd)
+- [평가](#평가)
 - [사용 데이터](#사용-데이터)
 - [사용 기술](#사용-기술)
 - [디렉터리 구조](#디렉터리-구조)
-- [평가](#평가)
 
 ## 프로젝트 개요
 
@@ -48,70 +48,11 @@ flowchart LR
 > [!NOTE]
 > `KGS`는 이 프로젝트가 구글 시트와 색인 이름(`kgs_index`)에 사용하는 내부 데이터 코드명입니다.
 
-## 빠른 시작
+## 핵심 성과
 
-### 설치
-
-Python 3.11 기준입니다(배포 이미지 `python:3.11-slim`).
-
-```bash
-pip install -r requirements.txt
-```
-
-### 환경 변수 (.env)
-
-`.env` 파일로 관리하며 저장소에는 포함되지 않습니다. Google 서비스 키(`hygoogle-service-key.json`)도 동일합니다.
-
-| 변수 | 용도 |
-| --- | --- |
-| `OPENAI_API_KEY` | 답변 생성 · 질의 재구성 · 요약 · 임베딩 |
-| `COHERE_API_KEY` | 검색 결과 재순위화 |
-| `ES_ENDPOINT`, `ELASTIC_API_KEY` | Elasticsearch |
-| `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_PORT`, `DB_NAME` | PostgreSQL |
-| `GCP_API_KEY` | Google Drive |
-| `LANGCHAIN_TRACING_V2`, `LANGCHAIN_API_KEY`, `LANGCHAIN_PROJECT` | LangSmith 모니터링 |
-
-### 서버 실행
-
-```bash
-# API 서버 (FastAPI, 8000 포트)
-uvicorn es_server:app --host 0.0.0.0 --port 8000 --reload
-
-# 테스트용 채팅 UI (Streamlit)
-streamlit run app.py
-```
-
-> [!NOTE]
-> 인덱스가 비어 있다면 [데이터 적재 파이프라인](#1-데이터-적재-파이프라인-배치)을 먼저 실행해야 답변이 생성됩니다.
-
-### 요청 예시
-
-`/chat`은 단건 JSON으로 응답합니다.
-
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "query": "한양대 수시 모집 인원 알려줘"}'
-```
-
-```json
-{"answer": "한양대학교 2026학년도 수시 모집 인원은 ... 😊"}
-```
-
-`/chat-stream`은 NDJSON 스트리밍으로 응답합니다(`-N`: 버퍼링 해제).
-
-```bash
-curl -N -X POST http://localhost:8000/chat-stream \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "query": "한양대 수시 모집 인원 알려줘"}'
-```
-
-```json
-{"token": "한양대학교"}
-{"token": " 2026학년도 수시 모집 인원은"}
-{"token": " 다음과 같습니다. ..."}
-{"status": "done"}
-```
+- **검색 품질** — BM25·벡터 가중치 스윕으로 하이브리드 최적점을 찾아 nDCG@30 **0.848** 달성 (순수 BM25 대비 +3.6%p, 순수 벡터 대비 +8.7%p)
+- **답변 품질** — MT-Bench 방식 LLM 평가 1,369문항에서 평균 **4.39 / 5점**, 만점 비율 69%
+- **운영 산출물** — 스트리밍 API 서버, PDF→색인 자동화 파이프라인, Docker/ECR/EC2 CI/CD까지 엔드투엔드 구축
 
 ## 워크플로우
 
@@ -119,7 +60,7 @@ curl -N -X POST http://localhost:8000/chat-stream \
 
 ### 1. 데이터 적재 파이프라인 (배치)
 
-Google Drive의 PDF를 읽어 Elasticsearch 색인까지 완성하는 오프라인 배치 과정입니다.
+Google Drive의 PDF를 읽어 Elasticsearch 색인까지 완성하는 오프라인 배치 과정입니다. 산출물은 검색 가능한 색인(`kgs_index`)과 파서별 RAW JSONL(S3)입니다.
 
 ```mermaid
 flowchart LR
@@ -149,19 +90,9 @@ flowchart LR
 | `page_number` | 페이지 번호 |
 | `parser` | 청크를 생성한 파서 |
 
-#### 실행
-
-```bash
-# PDF → 파서 → S3 저장만
-python -m utils.rag_pdf_pipeline --step parse-only
-
-# 위 단계 + 청킹 + Elasticsearch 색인까지 한 번에
-python -m utils.rag_pdf_pipeline --step full
-```
-
 ### 2. 질의응답 파이프라인 (실시간)
 
-사용자 질문 1건이 답변으로 이어지는 온라인 처리 흐름입니다. 서버 실행 방법은 [빠른 시작](#빠른-시작)을 참고하세요.
+사용자 질문 1건이 답변으로 이어지는 온라인 처리 흐름입니다. 산출물은 두 개의 API(`/chat` 단건 JSON, `/chat-stream` NDJSON 스트리밍)와 PostgreSQL에 축적되는 대화 기록·요약입니다.
 
 ```mermaid
 flowchart TD
@@ -177,7 +108,7 @@ flowchart TD
 1. 세션 기록 로드 — PostgreSQL에서 대화 기록과 요약을 불러옵니다. 서버 기동 시 세션 캐시를 미리 예열합니다.
 2. 질의 재구성 — LLM이 질문에서 대학명 목록과 핵심 검색 문장(`rewritten_query`)을 분리합니다.
 3. 대학명 필터 생성 — 추출한 대학명을 `config/university.json`으로 표준명으로 정규화해 메타데이터 필터(`+ 공통`)를 만듭니다.
-4. 하이브리드 검색 — BM25(가중치 0.4)와 벡터 검색(0.6)을 `EnsembleRetriever`로 결합합니다.
+4. 하이브리드 검색 — BM25와 벡터 검색을 `EnsembleRetriever`로 결합합니다.
 5. 재순위화 — reranker가 상위 근거만 압축 추출합니다.
 6. 답변 생성 — 근거·대화 요약·최근 대화를 프롬프트에 넣어 한국어 답변을 스트리밍합니다.
 7. 저장 — 질문/답변을 PostgreSQL에 기록하고, 조건 충족 시 대화 요약을 백그라운드로 갱신합니다.
@@ -201,7 +132,33 @@ flowchart LR
 > [!WARNING]
 > 현재 이 워크플로는 자동 실행되지 않도록 **비활성화**되어 있습니다.
 > 파일이 `.github/workflows/es_rag.yaml.disabled`로 보관되어 GitHub Actions가 인식하지 않습니다.
-> 다시 켜려면 파일명을 `es_rag.yaml`로 되돌리고, 저장소 Secrets(`AWS_ACCESS_KEY_ID`, `EC2_HOST`, `OPENAI_API_KEY` 등)를 등록하세요.
+
+## 평가
+
+`eval/` 디렉터리에 실험 스크립트와 결과(CSV·그래프)가 있습니다.
+
+### 검색 성능 — 하이브리드 가중치 스윕
+
+평가 질의셋으로 벡터 비중 α를 0~1로 바꿔가며 측정한 결과, **α=0.4(BM25 0.6 : 벡터 0.4)가 최적**이었습니다 (`eval/db_test/ensemble/`).
+
+| 구성 (Elasticsearch) | nDCG@30 | MRR@30 | Count@5 |
+| --- | --- | --- | --- |
+| 순수 BM25 (α=0) | 0.818 | 0.762 | 0.901 |
+| 순수 벡터 (α=1) | 0.761 | 0.691 | 0.839 |
+| **하이브리드 (α=0.4)** | **0.848** | **0.800** | **0.933** |
+
+이외에 Elasticsearch·OpenSearch·Weaviate 3개 엔진 비교, BM25 파라미터(k1/b) 히트맵, HNSW 파라미터(m/efC/efS) 실험이 `eval/db_test/`에 정리되어 있습니다.
+
+### 답변 품질 — MT-Bench
+
+LLM 심사 방식으로 1,369개 질문-답변 쌍을 채점했습니다 (`eval/mtbench/`).
+
+- 평균 **4.39 / 5점** (표준편차 1.08)
+- 만점(5점) 비율 **69%** (945건)
+
+### 부하 테스트
+
+Locust로 동시 사용자 부하를 시뮬레이션했습니다 (`eval/locustfile.py`).
 
 ## 사용 데이터
 
@@ -212,8 +169,7 @@ flowchart LR
 | 가공 데이터 | 파서별 RAW JSONL (AWS S3, `pdf_parsed/`) |
 | 색인 데이터 | Elasticsearch `kgs_index` (본문 + 형태소 + 벡터 + 메타데이터) |
 | 운영 데이터 | PostgreSQL 대화 기록(`qna_chat_history`) · 대화 요약 |
-
-평가용 데이터와 결과는 [평가](#평가) 섹션을 참고하세요.
+| 평가 데이터 | 검색 평가 질의셋 · MT-Bench 질문-답변 쌍 (`eval/`) |
 
 ## 사용 기술
 
@@ -253,15 +209,12 @@ HY_LLM_Chain/
 │   ├── rag_filter_query.py    # 질의 재구성 + 대학명 정규화
 │   ├── rag_retriever.py       # BM25 / 벡터 / rerank
 │   └── ...                    # RDS(대화기록·요약), S3 IO 등
-├── eval/                  # 검색 성능·MT-Bench·부하 테스트 결과
+├── eval/                  # 평가 결과
+│   ├── db_test/               # 검색 엔진·파라미터·앙상블 실험 (CSV·그래프)
+│   ├── mtbench/               # MT-Bench 답변 품질 평가
+│   ├── retrieval_metrics.csv  # 질의별 검색 지표 원본
+│   └── locustfile.py          # 부하 테스트
+├── notebooks/             # 탐색·검증용 노트북 (OCR, ES, RDS, 리트리버)
 ├── my_rag_project/        # OpenSearch·Weaviate 변형 및 실험 코드
 └── .github/workflows/     # CI/CD (현재 비활성화)
 ```
-
-## 평가
-
-`eval/` 디렉터리에 평가 스크립트와 결과가 있습니다.
-
-1. 검색 성능 — BM25·벡터·앙상블 리트리버를 MRR / nDCG / Count@k 지표로 비교 (`eval/db_test/`)
-2. 답변 품질 — MT-Bench 평가 (`rag_mtbench.ipynb`)
-3. 부하 테스트 — Locust (`eval/locustfile.py`)
