@@ -1,3 +1,5 @@
+<div align="center">
+
 # admission-rag-chain — 입시 상담 RAG LLM Chain
 
 모집요강 PDF를 색인해 근거 기반으로 답하는 한국어 입시 상담 RAG 서버입니다.
@@ -8,6 +10,8 @@
 ![LangChain](https://img.shields.io/badge/LangChain-0.3.x-1C3C3C)
 ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-BM25%20%2B%20kNN-005571?logo=elasticsearch&logoColor=white)
 ![Docker](https://img.shields.io/badge/Deploy-Docker%20%2F%20AWS-2496ED?logo=docker&logoColor=white)
+
+</div>
 
 ## 목차
 
@@ -79,7 +83,8 @@ flowchart LR
 4. 형태소·임베딩 — Kiwi로 `text_morph` 필드를 만들고 임베딩 벡터를 생성합니다.
 5. 색인 — `bulk`로 색인합니다. 본문·형태소·벡터·메타데이터가 한 문서에 함께 들어갑니다.
 
-각 청크에 저장되는 메타데이터는 다음과 같습니다.
+<details>
+<summary><b>청크 메타데이터 필드 8종</b> (펼쳐보기)</summary>
 
 | 필드 | 의미 |
 | --- | --- |
@@ -91,6 +96,8 @@ flowchart LR
 | `type` | text / table / image |
 | `page_number` | 페이지 번호 |
 | `parser` | 청크를 생성한 파서 |
+
+</details>
 
 ### 2. 질의응답 파이프라인 (실시간)
 
@@ -148,6 +155,10 @@ flowchart LR
 | 순수 BM25 (α=0) | 0.818 | 0.762 | 0.901 |
 | 순수 벡터 (α=1) | 0.761 | 0.691 | 0.839 |
 | **하이브리드 (α=0.4)** | **0.848** | **0.800** | **0.933** |
+
+<img src="eval/db_test/ensemble/ensemble_weight_20251201_143004.png" alt="가중치 α별 nDCG/MRR/Count@5 스윕 결과 그래프" width="720">
+
+
 
 이외에 Elasticsearch·OpenSearch·Weaviate 3개 엔진 비교, BM25 파라미터(k1/b) 히트맵, HNSW 파라미터(m/efC/efS) 실험이 `eval/db_test/`에 정리되어 있습니다.
 
