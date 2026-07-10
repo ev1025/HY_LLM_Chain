@@ -1,5 +1,3 @@
-<div align="center">
-
 # admission-rag-chain — 입시 상담 RAG LLM Chain
 
 모집요강 PDF를 색인해 근거 기반으로 답하는 한국어 입시 상담 RAG 서버입니다.
@@ -10,21 +8,6 @@
 ![LangChain](https://img.shields.io/badge/LangChain-0.3.x-1C3C3C)
 ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-BM25%20%2B%20kNN-005571?logo=elasticsearch&logoColor=white)
 ![Docker](https://img.shields.io/badge/Deploy-Docker%20%2F%20AWS-2496ED?logo=docker&logoColor=white)
-
-</div>
-
-## 목차
-
-[프로젝트 개요](#프로젝트-개요)<br>
-[핵심 성과](#핵심-성과)<br>
-[사용 데이터](#사용-데이터)<br>
-[사용 기술](#사용-기술)<br>
-[디렉터리 구조](#디렉터리-구조)<br>
-[워크플로우](#워크플로우)<br>
-&nbsp;&nbsp;&nbsp;[1. 데이터 적재 파이프라인 (배치)](#1-데이터-적재-파이프라인-배치)<br>
-&nbsp;&nbsp;&nbsp;[2. 질의응답 파이프라인 (실시간)](#2-질의응답-파이프라인-실시간)<br>
-&nbsp;&nbsp;&nbsp;[3. 배포 파이프라인 (CI/CD)](#3-배포-파이프라인-cicd)<br>
-[평가](#평가)
 
 <br>
 
